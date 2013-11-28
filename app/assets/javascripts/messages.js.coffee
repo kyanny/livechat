@@ -4,5 +4,4 @@
 source = new EventSource('/messages/events')
 source.addEventListener 'message', (e) =>
   message = $.parseJSON(e.data)
-  console.log message
   $('#chat').append($('<li>').text("#{message.name}: #{message.body}"))

@@ -7,28 +7,24 @@ class MessagesController < ApplicationController
   end
 
   def create
-    if message = Message.create(params.require(:message).permit(:name, :body))
-      head :no_content
-    else
-      render json: message.errors, status: :unprocessable_entity
-    end
+    attributes = params.require(:message).permit(:name, :body)
+    @message = Message.create!(attributes)
+    $redis.publish('messages.create', @message.to_json)
+    head :no_content
   end
 
   def events
     response.headers["Content-Type"] = "text/event-stream"
-    start = Time.zone.now
-    10.times do
-      Message.uncached do
-        Message.where('created_at > ?', start).each do |message|
-          response.stream.write("data: #{message.to_json}\n\n")
-          start = Time.zone.now
-        end
+    redis = Redis.new
+    redis.subscribe('messages.create') do |on|
+      on.message do |event, data|
+        response.stream.write("data: #{data}\n\n")
       end
-      sleep 2
     end
   rescue IOError
     logger.info "Stream closed"
   ensure
+    redis.quit
     response.stream.close
   end
 end
