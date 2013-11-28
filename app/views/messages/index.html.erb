@@ -1,0 +1,9 @@
+<h1>Listing messages</h1>
+
+<ul id="chat">
+  <% @messages.each do |message| %>
+    <li><%= message.name %>: <%= message.body %></li>
+  <% end %>
+</ul>
+
+<%= render 'form' %>
